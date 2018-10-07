@@ -1,11 +1,4 @@
 package game
 
-class Cell(row: Int, Col: String) {
 
-}
-
-
-object Cell {
-
-    
-}
+case class Cell(row: Int, col: String, hit: Boolean, occupied: Boolean)
