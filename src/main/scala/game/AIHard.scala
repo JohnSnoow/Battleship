@@ -8,15 +8,25 @@ import Prompt._
 case class AIHard(val name: String, val number: Int, val ownedGrid: Grid, val opponentGrid: Grid, val boats: List[Boat]) extends Player() {
     def shoot(opponent: Player, random: Random): (Player, Player) = {
         val (colR, rowR): (String, Int) = askShot(opponentGrid, random)
-        (AIHard(name, number, ownedGrid, opponentGrid, boats), opponent)
+        
+        // add shot in grid
+        val (newGridOpponentGrid, newCellOpponentGrid): (Grid, Cell) = opponentGrid.cellHit(Cell(rowR, colR))
+        val (newGridOpp, newCellOpp): (Grid, Cell) = opponent.ownedGrid.cellHit(Cell(rowR, colR))
+
+        val newListBoat: List[Boat] = if ( opponent.ownedGrid.isOccupied( newCellOpp )) Boat.boatsAfterHit(opponent.boats, newCellOpp ) else opponent.boats
+
+        val newAI: Player = update(ownedGrid, Grid ( opponentGrid.cellGrid.updated( (colR + rowR.toString), newCellOpp )), boats)
+        val newPlayer: Player = opponent.update(Grid ( opponent.ownedGrid.cellGrid.updated( (colR + rowR.toString), newCellOpp )), opponent.opponentGrid, newListBoat)
+
+        (newAI, newPlayer)
     }
 
     
     def askShot(grid: Grid, random: Random): (String, Int) = {
         val optionalCell: Option[Cell] = tailRecAskShot(grid, grid.cellGrid)
         optionalCell match {
-            case None => (Convert_Util.gridCollumns(random.nextInt(10)).toString, random.nextInt(10) + 1)
             case Some ( Cell(row, col, hit, occupied) ) => (col, row)
+            case None => (Convert_Util.gridCollumns(random.nextInt(10)).toString, random.nextInt(10) + 1)
         }
     }
 
@@ -25,7 +35,7 @@ case class AIHard(val name: String, val number: Int, val ownedGrid: Grid, val op
         hashmap.headOption match {
             case None => None
             case Some( (key, Cell(row, col, hit, occupied)) ) => 
-                if (!hit) tailRecAskShot(grid, hashmap.tail)
+                if (!occupied) tailRecAskShot(grid, hashmap.tail)
                 else {
                     if ( row-1 > 0 && !grid.isHit( Cell(row-1, col) ) ) Some(Cell(row-1, col))
                     else if ( row+1 < 11 && !grid.isHit( Cell(row+1, col) ) ) Some(Cell(row+1, col))

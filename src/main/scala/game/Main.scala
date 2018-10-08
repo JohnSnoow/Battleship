@@ -11,7 +11,7 @@ import scala.collection.immutable.HashMap
 * @param currentPlayer the player whose turn it is
 * @param playerOne the first player to be created
 * @param playerTwo the second player to be created
-* @param gameProgress the current phase of the game : 0 = Choosing game mode, 01 = Choosing first AI, 02 = Choosing second AI, 1 = Placing boats, 2 = Playing the game, 3 = game ends
+* @param gameProgress the current phase of the game : 0 = Choosing game mode, 00 = player(s) set their name, 01 = Choosing first AI, 02 = Choosing second AI, 1 = Placing boats, 2 = Playing the game, 3 = game ends
 */
 case class GameState(gameMode: Int, firstPlayer: Int, currentPlayer: Int, playerOne: Option[Player], playerTwo: Option[Player], gameProgress: String)
 
@@ -164,18 +164,19 @@ object Main extends App {
                 }
             // Playing game
             case "2" => 
-            gameState.currentPlayer match {
-                case 0 => val (newPlayerOne, newPlayerTwo): (Player, Player) = gameState.playerOne.get.shoot(gameState.playerTwo.get, random)
-                    print("Grid OwnedGrid")
-                    newPlayerOne.ownedGrid.showGrid()
-                    print("Grid opponent Grid")
-                    newPlayerOne.opponentGrid.showGrid()
-                    if ( newPlayerTwo.checkGameLost() ) mainLoop(gameState.copy(playerOne = Some(newPlayerOne), playerTwo = Some(newPlayerTwo), gameProgress = "3"), random)
-                    else mainLoop(gameState.copy(playerOne = Some(newPlayerOne), playerTwo = Some(newPlayerTwo), currentPlayer = 1), random)
-                case 1 => val (newPlayerTwo, newPlayerOne): (Player, Player) = gameState.playerTwo.get.shoot(gameState.playerOne.get, random)
-                    if ( newPlayerOne.checkGameLost() ) mainLoop(gameState.copy(playerOne = Some(newPlayerOne), playerTwo = Some(newPlayerTwo), gameProgress = "3"), random)
-                    else mainLoop(gameState.copy(playerOne = Some(newPlayerOne), playerTwo = Some(newPlayerTwo), currentPlayer = 0), random)
-            }
+                gameState.gameMode match {
+                    case 1 | 2 => 
+                        gameState.currentPlayer match {
+                            case 0 => val (newPlayerOne, newPlayerTwo): (Player, Player) = gameState.playerOne.get.shoot(gameState.playerTwo.get, random)
+                                if ( newPlayerTwo.checkGameLost() ) mainLoop(gameState.copy(playerOne = Some(newPlayerOne), playerTwo = Some(newPlayerTwo), gameProgress = "3"), random)
+                                else mainLoop(gameState.copy(playerOne = Some(newPlayerOne), playerTwo = Some(newPlayerTwo), currentPlayer = 1), random)
+                            case 1 => val (newPlayerTwo, newPlayerOne): (Player, Player) = gameState.playerTwo.get.shoot(gameState.playerOne.get, random)
+                                if ( newPlayerOne.checkGameLost() ) mainLoop(gameState.copy(playerOne = Some(newPlayerOne), playerTwo = Some(newPlayerTwo), gameProgress = "3"), random)
+                                else mainLoop(gameState.copy(playerOne = Some(newPlayerOne), playerTwo = Some(newPlayerTwo), currentPlayer = 0), random)
+                        }
+                    case 3 =>
+                        playGameAI(gameState, random, 100)
+                }
             
             // End Game
             case "3" => gameState.currentPlayer match {
@@ -207,4 +208,56 @@ object Main extends App {
         
     }
 
+    def playGameAI(gameState: GameState, random: Random, numberGameToPlay: Int): Unit = {
+       
+        @tailrec
+        def playTailLoop(gameState: GameState, random: Random, numberGameToPlay: Int, score1: Int, score2: Int): (Int, Int) = {
+            if (numberGameToPlay == 0) (score1, score2)
+            else {
+                gameState.currentPlayer match {
+                    case 0 => val (newPlayerOne, newPlayerTwo): (Player, Player) = gameState.playerOne.get.shoot(gameState.playerTwo.get, random)
+                        if ( newPlayerTwo.checkGameLost() ) {
+                            val (newGameState, newRandom): (GameState, Random) = prepareNewgame(gameState, random) 
+                            playTailLoop(newGameState, newRandom, numberGameToPlay-1, score1+1, score2)
+                        }
+                        else playTailLoop(gameState.copy(playerOne = Some(newPlayerOne), playerTwo = Some(newPlayerTwo), currentPlayer = 1), random, numberGameToPlay, score1, score2)
+                    case 1 => val (newPlayerTwo, newPlayerOne): (Player, Player) = gameState.playerTwo.get.shoot(gameState.playerOne.get, random)
+                        if ( newPlayerOne.checkGameLost() ) {
+                            val (newGameState, newRandom): (GameState, Random) = prepareNewgame(gameState, random) 
+                            playTailLoop(newGameState, newRandom, numberGameToPlay-1, score1, score2+1)
+                        }
+                        else playTailLoop(gameState.copy(playerOne = Some(newPlayerOne), playerTwo = Some(newPlayerTwo), currentPlayer = 0), random, numberGameToPlay, score1, score2)
+                }
+            }
+        }
+
+        def prepareNewgame(gameState: GameState, random: Random): (GameState, Random) = {
+            val listBoats: List[Boat] = List(Boat("carrier", 5, List[Cell]()), Boat("battleship", 4, List[Cell]()), Boat("cruiser", 3, List[Cell]()), Boat("submarine", 3, List[Cell]()), Boat("destroyer", 2, List[Cell]()))
+            val newAIOne: Player = Player.placeBoatsRandom( 
+                gameState.playerOne.get.update(
+                    ownedGrid = Grid(HashMap[String,Cell]()), 
+                    opponentGrid = Grid(HashMap[String,Cell]()),
+                    boats = List[Boat]()
+                ), listBoats, random, 0)
+            val newAITwo: Player = Player.placeBoatsRandom( 
+                gameState.playerTwo.get.update(
+                    ownedGrid = Grid(HashMap[String,Cell]()), 
+                    opponentGrid = Grid(HashMap[String,Cell]()),
+                    boats = List[Boat]()
+                ), listBoats, random, 0)
+            val newFirst = if (gameState.firstPlayer == 0 ) 1 else 0
+            ( gameState.copy(playerOne= Some(newAIOne), playerTwo = Some(newAITwo), firstPlayer = newFirst), random )
+        }
+        
+        val (score1, score2): (Int, Int) = playTailLoop(gameState, random, numberGameToPlay, 0, 0)
+        WriteToFile.writeToFile("./ai_proof.csv", gameState.playerOne.get.name + "; " + score1.toString + "; " + gameState.playerTwo.get.name + "; " + score2.toString)
+        endGameAI(gameState.playerOne.get.name, score1, gameState.playerTwo.get.name, score2)
+
+    }
+
+    def endGameAI(ai1: String, score1: Int, ai2: String, score2: Int): Unit = {
+        if (score1 > score2) showPrompt(ai1 + " a gagné avec un score de " + score1.toString + " à " + score2.toString)
+        else if (score1 == score2) showPrompt("Egalité entre " + ai1 + " et " + ai2)
+        else showPrompt(ai2 + " a gagné avec un score de " + score2.toString + " à " + score1.toString)
+    }
 }
