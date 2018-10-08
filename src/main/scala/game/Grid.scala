@@ -1,6 +1,6 @@
 package game
 
-import scala.collection.mutable.HashMap
+import scala.collection.immutable.HashMap
 import scala.annotation.tailrec
 import Prompt._
 
@@ -17,7 +17,7 @@ case class Grid(cellGrid: HashMap[String, Cell]) {
             else {
                 val tensToPrint = if (progressRow == 10) "10 " else progressRow + "  " // show line number
                 val letterCol = Convert_Util.gridCollumns(progressCol).toString
-                val cell: Cell = cellGrid.get( letterCol + progressRow.toString ).getOrElse(Cell(0,"", false, false))
+                val cell: Cell = cellGrid.get( letterCol + progressRow.toString ).getOrElse(Cell(0,""))
                 val printableCell: String = if ( cell.hit && cell.occupied ) " [X] " else if ( cell.hit ) " [O] " else if ( cell.occupied ) " [B] " else " [ ] "
                 if (progressCol == 0) prepareGridLoop(printableGrid + tensToPrint + printableCell, progressRow, progressCol+1)
                 else prepareGridLoop(printableGrid + printableCell, progressRow, progressCol+1)
@@ -34,16 +34,15 @@ case class Grid(cellGrid: HashMap[String, Cell]) {
     }
 
     def cellHit(cell: Cell): (Grid, Cell) = {
-        val extractedCell: Cell = cellGrid.get(cell.col+cell.row).getOrElse(Cell(0, "", false, false))
-        val newCell: Cell = Cell( cell.row, cell.col, true, extractedCell.occupied )
-        val newGrid: Grid = Grid ( cellGrid.clone() += ( (cell.col + cell.row) -> newCell ) )
+        val extractedCell: Cell = cellGrid.get(cell.col+cell.row).getOrElse(Cell(cell.row, cell.col))
+        val newCell: Cell = extractedCell.copy( hit = true )
+        val newGrid: Grid = Grid ( cellGrid.updated( (cell.col + cell.row.toString), newCell ))
         (newGrid, newCell)
     }
 
-    def isHit(cell: Cell): (Boolean) = {
-        val extractedCell: Cell = cellGrid.get(cell.col+cell.row).getOrElse(Cell(0, "", false, false))
-        (extractedCell.occupied == true)
-    }
+    def isHit(cell: Cell): (Boolean) = cellGrid.get(cell.col+cell.row).getOrElse(Cell(0, "")).hit
+
+    def isOccupied(cell: Cell): (Boolean) = cellGrid.get(cell.col+cell.row).getOrElse(Cell(0, "")).occupied
 
 
 }

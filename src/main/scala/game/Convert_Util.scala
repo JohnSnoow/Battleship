@@ -14,4 +14,6 @@ object Convert_Util {
             case e: NumberFormatException => None
         }
     }
+
+    def indexOfCol (element: String): Int = gridCollumns.indexOf(element.head)
 }

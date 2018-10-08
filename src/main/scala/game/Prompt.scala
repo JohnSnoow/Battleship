@@ -18,6 +18,7 @@ object Prompt {
             case "AIDifficulty" => if (response == "E" || response == "M"|| response == "H") Some(response) else if (response == "Q") Some("Quit") else None
             case "askCol" => if (Convert_Util.gridCollumns.exists(letter => letter.toString == response)) Some(response) else None
             case "askRow" => if (Convert_Util.strToInt(response).getOrElse(-1) >= 1 && Convert_Util.strToInt(response).getOrElse(-1) <= 10) Some(response) else None
+            case "remakeGame" => if (response == "Y" || response == "N") Some(response) else None
             case "h or v" => if (response == "H" || response == "V") Some(response) else None
             case _ => None
         }
@@ -27,7 +28,7 @@ object Prompt {
 
     def printGameOver(winner: Player): Unit = println(
         "\n=== GAME OVER ===\n"
-        + "The player " + winner.name + "wins !\n")
+        + "The player " + winner.name + " wins !\n")
 
 }
 

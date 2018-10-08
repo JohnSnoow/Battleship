@@ -1,19 +1,51 @@
 package game
 
+import scala.annotation.tailrec
+import scala.collection.immutable.HashMap
+import scala.util.Random
+import Prompt._
+
 case class Human(val name: String, val number: Int, val ownedGrid: Grid, val opponentGrid: Grid, val boats: List[Boat]) extends Player() {
+
     def shoot(opponent: Player, random: Random): (Player, Player) = {
-      opponentGrid.showGrid()
-      showPrompt( "Select a collumn to shoot : \n" + "A-J \n" )
-      val userInputCol = getUserInput("askCol").getOrElse("tryAgain")
-      showPrompt( "Select a row to shoot : \n" + "1-10 \n" )
-      val userInputRow = getUserInput("askRow").getOrElse("tryAgain")
-      if (userInputCol == "tryAgain" || userInputRow == "tryAgain") shoot(opponent, random)
-      else {
-        val colR: String = Convert_Util.gridCollumns(random.nextInt(10)).toString
-        val rowR: Int = random.nextInt(10)
-      }
-      // to finish
-      (Human(name, number, ownedGrid, opponentGrid, boats), opponent)
+        val (colR, rowR): (String, Int) = askShot()
+        // add shot in grid
+        val (newGridOpponentGrid, newCellOpponentGrid): (Grid, Cell) = opponentGrid.cellHit(Cell(rowR, colR))
+        val (newGridOpp, newCellOpp): (Grid, Cell) = opponent.ownedGrid.cellHit(Cell(rowR, colR))
+
+        val newListBoat: List[Boat] = if ( opponent.ownedGrid.isOccupied( newCellOpp )) Boat.boatsAfterHit(opponent.boats, newCellOpp ) else opponent.boats
+        if ( opponent.ownedGrid.isOccupied( newCellOpp )) {
+            val boatHit: Boat = Boat.findBoat(newListBoat, newCellOpp)
+            if ( boatHit.isDestroyed() ) showPrompt("Player " + opponent.name + " says : You've sunk my " + boatHit.name + " !\n" )
+            else showPrompt("Player " + opponent.name + " says : Hit !\n" )
+        } else showPrompt("Player " + opponent.name + " says : Miss !\n" )
+
+        // return the new players
+        val newHuman: Player = update(ownedGrid, Grid ( opponentGrid.cellGrid.updated( (colR + rowR.toString), newCellOpp ) ), boats)
+        val newPlayer: Player = opponent.update(Grid ( opponent.ownedGrid.cellGrid.updated( (colR + rowR.toString), newCellOpp ) ), opponent.opponentGrid, newListBoat)
+
+        (newHuman, newPlayer)
+    }
+
+    @tailrec
+    final def askShot(): (String, Int) = {
+        opponentGrid.showGrid()
+        ownedGrid.showGrid()
+        showPrompt("Player : " + name + "\n")
+        showPrompt( "Select a collumn to shoot : \n" + "A-J \n" )
+        val userInputCol = getUserInput("askCol").getOrElse("tryAgain")
+        showPrompt( "Select a row to shoot : \n" + "1-10 \n" )
+        val userInputRow = getUserInput("askRow").getOrElse("tryAgain")
+        if (userInputCol == "tryAgain" || userInputRow == "tryAgain") askShot()
+        else {
+            val colR: String = Convert_Util.gridCollumns( Convert_Util.indexOfCol(userInputCol) ).toString
+            val rowR: Int = userInputRow.toInt
+            (colR, rowR)
+        }
+    }
+
+    def update(ownedGrid: Grid, opponentGrid: Grid, boats: List[Boat]): Player = {
+        copy(ownedGrid = ownedGrid, opponentGrid = opponentGrid, boats = boats)
     }
 
 

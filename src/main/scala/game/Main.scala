@@ -3,7 +3,7 @@ package game
 import Prompt._
 import scala.annotation.tailrec
 import scala.util.Random
-import scala.collection.mutable.HashMap
+import scala.collection.immutable.HashMap
 
 /**
 * @param gameMode the game mode : 1 = Player vs Player, 2 = Player vs AI, 3 = AI vs AI
@@ -101,19 +101,18 @@ object Main extends App {
                 + "(e)asy, (m)edium or (h)ard \n"
                 + "you can also (q)uit the game \n")
             val userInput = getUserInput("AIDifficulty").getOrElse("tryAgain")
-            val listBoats = List(Boat("carrier", 5, List[Cell]()), Boat("battleship", 4, List[Cell]()), Boat("cruiser", 3, List[Cell]()), Boat("submarine", 3, List[Cell]()), Boat("destroyer", 2, List[Cell]()))
             userInput match {
                 case "E" => 
                     // create easy AI
-                    val newAI = AIEasy("AIEasy", 1, Grid(HashMap[String, Cell]()), Grid(HashMap[String, Cell]()), listBoats)
+                    val newAI = AIEasy("AIEasy", 1, Grid(HashMap[String, Cell]()), Grid(HashMap[String, Cell]()), List[Boat]())
                     if (gameState.gameMode == 2) mainLoop(gameState.copy(gameProgress = "1", playerTwo = Some(newAI)), random) else mainLoop(gameState.copy(gameProgress = "02", playerOne = Some(newAI)), random)
                 case "M" =>
                     // create medium AI
-                    val newAI = AIMedium("AIMedium", 1, Grid(HashMap[String, Cell]()), Grid(HashMap[String, Cell]()), listBoats)
+                    val newAI = AIMedium("AIMedium", 1, Grid(HashMap[String, Cell]()), Grid(HashMap[String, Cell]()), List[Boat]())
                     if (gameState.gameMode == 2) mainLoop(gameState.copy(gameProgress = "1", playerTwo = Some(newAI)), random) else mainLoop(gameState.copy(gameProgress = "02", playerOne = Some(newAI)), random)
                 case "H" =>
                     // create hard AI
-                    val newAI = AIHard("AIHard", 1, Grid(HashMap[String, Cell]()), Grid(HashMap[String, Cell]()), listBoats)
+                    val newAI = AIHard("AIHard", 1, Grid(HashMap[String, Cell]()), Grid(HashMap[String, Cell]()), List[Boat]())
                     if (gameState.gameMode == 2) mainLoop(gameState.copy(gameProgress = "1", playerTwo = Some(newAI)), random) else mainLoop(gameState.copy(gameProgress = "02", playerOne = Some(newAI)), random)
                 case "tryAgain" => 
                     mainLoop(gameState, random)
@@ -128,19 +127,18 @@ object Main extends App {
                 + "(e)asy, (m)edium or (h)ard \n"
                 + "you can also (q)uit the game\n")
             val userInput = getUserInput("AIDifficulty").getOrElse("tryAgain")
-            val listBoats = List(Boat("carrier", 5, List[Cell]()), Boat("battleship", 4, List[Cell]()), Boat("cruiser", 3, List[Cell]()), Boat("submarine", 3, List[Cell]()), Boat("destroyer", 2, List[Cell]()))
             userInput match {
                 case "E" => 
                     // create easy AI
-                    val newAI = AIEasy("AIEasy", 2, Grid(HashMap[String, Cell]()), Grid(HashMap[String, Cell]()), listBoats)
+                    val newAI = AIEasy("AIEasy", 2, Grid(HashMap[String, Cell]()), Grid(HashMap[String, Cell]()), List[Boat]())
                     mainLoop(gameState.copy(gameProgress = "1", playerTwo = Some(newAI)), random)
                 case "M" => 
                     // create medium AI
-                    val newAI = AIMedium("AIMedium", 2, Grid(HashMap[String, Cell]()), Grid(HashMap[String, Cell]()), listBoats)
+                    val newAI = AIMedium("AIMedium", 2, Grid(HashMap[String, Cell]()), Grid(HashMap[String, Cell]()), List[Boat]())
                     mainLoop(gameState.copy(gameProgress = "1", playerTwo = Some(newAI)), random)
                 case "H" => 
                     // create hard AI
-                    val newAI = AIHard("AIHard", 2, Grid(HashMap[String, Cell]()), Grid(HashMap[String, Cell]()), listBoats)
+                    val newAI = AIHard("AIHard", 2, Grid(HashMap[String, Cell]()), Grid(HashMap[String, Cell]()), List[Boat]())
                     mainLoop(gameState.copy(gameProgress = "1", playerTwo = Some(newAI)), random)
                 case "tryAgain" => 
                     mainLoop(gameState, random)
@@ -158,37 +156,46 @@ object Main extends App {
                 } else if (gameState.gameMode == 2) {
                     val newPlayerOne: Human = Human.placeBoats(Human( gameState.playerOne.get.name, 0, Grid(HashMap[String, Cell]()), Grid(HashMap[String, Cell]()), List[Boat]() ), listBoats, random)
                     val newAI: Player = Player.placeBoatsRandom( gameState.playerTwo.get, listBoats, random, 0)
-                    newAI.ownedGrid.showGrid()
                     mainLoop(gameState.copy(gameProgress = "2", playerOne= Some(newPlayerOne), playerTwo = Some(newAI)), random)
                 } else {
                     val newAIOne: Player = Player.placeBoatsRandom( gameState.playerOne.get, listBoats, random, 0)
                     val newAITwo: Player = Player.placeBoatsRandom( gameState.playerTwo.get, listBoats, random, 0)
-                    newAIOne.ownedGrid.showGrid()
-                    newAITwo.ownedGrid.showGrid()
                     mainLoop(gameState.copy(gameProgress = "2", playerOne= Some(newAIOne), playerTwo = Some(newAITwo)), random)
                 }
             // Playing game
             case "2" => 
-            // current player takes a shot. If AI no prompt
-            // if (gameState.currentPlayer == 0) mainLoop(gameState.copy(currentPlayer = 1), random) else mainLoop(gameState.copy(currentPlayer = 0), random)
-            // Game Ends with a winner
-            // check if boat is hit
-            // if ( opponent.ownedGrid.isHit(Cell(rowR, colR, false, false)) ) showPrompt("Hit !") else showPrompt("Miss !")
+            gameState.currentPlayer match {
+                case 0 => val (newPlayerOne, newPlayerTwo): (Player, Player) = gameState.playerOne.get.shoot(gameState.playerTwo.get, random)
+                    print("Grid OwnedGrid")
+                    newPlayerOne.ownedGrid.showGrid()
+                    print("Grid opponent Grid")
+                    newPlayerOne.opponentGrid.showGrid()
+                    if ( newPlayerTwo.checkGameLost() ) mainLoop(gameState.copy(playerOne = Some(newPlayerOne), playerTwo = Some(newPlayerTwo), gameProgress = "3"), random)
+                    else mainLoop(gameState.copy(playerOne = Some(newPlayerOne), playerTwo = Some(newPlayerTwo), currentPlayer = 1), random)
+                case 1 => val (newPlayerTwo, newPlayerOne): (Player, Player) = gameState.playerTwo.get.shoot(gameState.playerOne.get, random)
+                    if ( newPlayerOne.checkGameLost() ) mainLoop(gameState.copy(playerOne = Some(newPlayerOne), playerTwo = Some(newPlayerTwo), gameProgress = "3"), random)
+                    else mainLoop(gameState.copy(playerOne = Some(newPlayerOne), playerTwo = Some(newPlayerTwo), currentPlayer = 0), random)
+            }
+            
+            // End Game
             case "3" => gameState.currentPlayer match {
                 case 0 => printGameOver(gameState.playerOne.get)
                 case 1 => printGameOver(gameState.playerTwo.get)
                 }  
                 showPrompt(
                     "Do you wish to play again ? \n"
-                    + "(y)es or (n)o")
+                    + "(y)es or (n)o\n")
                 val userInput = getUserInput("remakeGame").getOrElse("wrongInput")
                 userInput match {
-                case "y" => 
-                    var newFirst = if (gameState.firstPlayer == 0 ) 1 else 0
-                    // if (gameState.firstPlayer == 0 ) { val newFirst = 1 } else { val newFirst = 0 }
-                    mainLoop(s.copy(firstPlayer = newFirst), random)
-                case _ =>
-                    showPrompt("Exiting Battleship.\n")
+                case "Y" => 
+                    val newFirst = if (gameState.firstPlayer == 0 ) 1 else 0
+                    val emptyGrid: Grid =  Grid (HashMap[String, Cell]())
+                    val emptyBoats: List[Boat] = List[Boat]()
+                    val newPlayerOne = gameState.playerOne.get.update(emptyGrid, emptyGrid, emptyBoats)
+                    val newPlayerTwo = gameState.playerTwo.get.update(emptyGrid, emptyGrid, emptyBoats)
+                    mainLoop(gameState.copy(firstPlayer = newFirst, currentPlayer = newFirst, playerOne = Some(newPlayerOne), playerTwo = Some(newPlayerTwo), gameProgress = "1"), random)
+                case "wrongInput" => mainLoop(gameState, random)
+                case _ => showPrompt("Exiting Battleship.\n")
                 }
             // default behavior
             case _ => showPrompt(

@@ -1,22 +1,22 @@
 package game
 
 import scala.annotation.tailrec
-import scala.collection.mutable.HashMap
+import scala.collection.immutable.HashMap
 import scala.util.Random
 import Prompt._
 
 abstract class Player () {
-    def name: String
-    def number: Int
-    def ownedGrid: Grid
-    def opponentGrid: Grid
-    def boats: List[Boat]
+    val name: String
+    val number: Int
+    val ownedGrid: Grid
+    val opponentGrid: Grid
+    val boats: List[Boat]
     def shoot(opponent: Player, random: Random): (Player, Player)
     @tailrec
     final def tryPlaceBoat(boat: Boat, colR: String, rowR: Int, dirR: String, progress: Int, cells: List[Cell]): (Boat, Boolean) = {
         if (progress >= boat.length) (boat, true)
         else {
-            val newColIndex: Int = Convert_Util.gridCollumns.indexOf(colR.head) + progress
+            val newColIndex: Int = Convert_Util.indexOfCol(colR) + progress
             val newRowR: Int = rowR + progress
             if ( (dirR == "H" && newColIndex >= 10) || (dirR == "V" && newRowR > 10) ) (boat, false)
             else {
@@ -30,6 +30,10 @@ abstract class Player () {
         }
     }
 
+    def checkGameLost(): Boolean = !boats.exists( boat => !boat.isDestroyed() )
+
+
+    def update(ownedGrid: Grid, opponentGrid: Grid, boats: List[Boat]): Player
 
 }
 
@@ -59,4 +63,5 @@ object Player {
             addboatTogrid(Grid( HashMap[String, Cell]((cellCol + cellRow.toString) -> boat.cells(progress)) ++ grid.cellGrid), boat, progress+1)
         }
     }
+
 }
