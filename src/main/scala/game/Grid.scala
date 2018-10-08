@@ -11,21 +11,20 @@ case class Grid(cellGrid: HashMap[String, Cell]) {
         val str: String = "|    A    B    C    D    E    F    G    H    I    J\n"
 
         @tailrec
-        def prepareGridLoop(printableGrid: String, progress: Int): String = {
-            if (progress > 100) printableGrid
+        def prepareGridLoop(printableGrid: String, progressRow: Int, progressCol: Int): String = {
+            if (progressRow > 10) printableGrid
+            else if (progressCol > 9) prepareGridLoop(printableGrid + "\n", progressRow+1, 0)
             else {
-                val tens = (progress / 10) + 1 // Calculates the row we are at
-                val tensToPrint = if (tens == 10) "10 " else tens.toString + "  " // show line number
-                val letterCol = if (progress % 10 == 0) Convert_Util.gridCollumns(9) else Convert_Util.gridCollumns(progress%10 - 1 )
-                val cell: Cell = cellGrid.get( letterCol + tens.toString ).getOrElse(Cell(0,"", false, false))
+                val tensToPrint = if (progressRow == 10) "10 " else progressRow + "  " // show line number
+                val letterCol = Convert_Util.gridCollumns(progressCol).toString
+                val cell: Cell = cellGrid.get( letterCol + progressRow.toString ).getOrElse(Cell(0,"", false, false))
                 val printableCell: String = if ( cell.hit && cell.occupied ) " [X] " else if ( cell.hit ) " [O] " else if ( cell.occupied ) " [B] " else " [ ] "
-                if (progress % 10 == 1) prepareGridLoop(printableGrid + tensToPrint + printableCell, progress+1) 
-                else if (progress % 10 == 0) prepareGridLoop(printableGrid + printableCell + "\n", progress+1)
-                else prepareGridLoop(printableGrid + printableCell, progress+1)
+                if (progressCol == 0) prepareGridLoop(printableGrid + tensToPrint + printableCell, progressRow, progressCol+1)
+                else prepareGridLoop(printableGrid + printableCell, progressRow, progressCol+1)
             }
         }
 
-        val gridToPrompt: String = prepareGridLoop(str, 1)
+        val gridToPrompt: String = prepareGridLoop(str, 1, 0)
         showPrompt(gridToPrompt)
     }
 
@@ -46,5 +45,5 @@ case class Grid(cellGrid: HashMap[String, Cell]) {
         (extractedCell.occupied == true)
     }
 
-    
+
 }
