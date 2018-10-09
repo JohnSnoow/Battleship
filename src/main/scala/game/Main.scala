@@ -375,6 +375,6 @@ object Main extends App {
     def endGameAI(ai1: String, score1: Int, ai2: String, score2: Int): Unit = {
         if (score1 > score2) showPrompt(ai1 + " a gagné avec un score de " + score1.toString + " à " + score2.toString)
         else if (score1 == score2) showPrompt("Egalité entre " + ai1 + " et " + ai2)
-        else showPrompt(ai2 + " a gagné avec un score de " + score2.toString + " à " + score1.toString)
+        else showPrompt(ai2 + " a gagné avec un score de " + score2.toString + " à " + score1.toString + "\n")
     }
 }

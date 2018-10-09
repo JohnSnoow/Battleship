@@ -1,6 +1,7 @@
 package game
 
 import scala.collection.immutable.HashMap
+import Console.{RED_B, WHITE_B, BLACK, RESET}
 import scala.annotation.tailrec
 import Prompt._
 
@@ -20,7 +21,7 @@ case class Grid(cellGrid: HashMap[String, Cell]) {
                 val tensToPrint = if (progressRow == 10) "10 " else progressRow + "  " // show line number
                 val letterCol = Convert_Util.gridcolumns(progressCol).toString
                 val cell: Cell = cellGrid.get( letterCol + progressRow.toString ).getOrElse(Cell(0,""))
-                val printableCell: String = if ( cell.hit && cell.occupied ) " [X] " else if ( cell.hit ) " [O] " else if ( cell.occupied ) " [B] " else " [ ] "
+                val printableCell: String = if ( cell.hit && cell.occupied ) s" ${RESET}${RED_B}[X]${RESET} " else if ( cell.hit ) s" ${RESET}${WHITE_B}${BLACK}[O]${RESET} " else if ( cell.occupied ) " [B] " else " [ ] "
                 if (progressCol == 0) prepareGridLoop(printableGrid + tensToPrint + printableCell, progressRow, progressCol+1)
                 else prepareGridLoop(printableGrid + printableCell, progressRow, progressCol+1)
             }

@@ -6,8 +6,8 @@ import scala.io.StdIn.readLine
 
 object Prompt {
 
-    def showPrompt(message: String): Unit = { 
-        print(message) 
+    def showPrompt(message: String): Unit = {
+        Console.println(message) 
     }
 
     def getUserInput(question: String): Option[String] = {
@@ -31,4 +31,3 @@ object Prompt {
         + "The player " + winner.name + " wins !\n")
 
 }
-
