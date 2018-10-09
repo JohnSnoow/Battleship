@@ -1,5 +1,5 @@
 package game
- 
+
 import java.io._
 
 
@@ -16,6 +16,5 @@ object WriteToFile {
         bw.flush()
         bw.close()
     }
-   
-}
 
+}

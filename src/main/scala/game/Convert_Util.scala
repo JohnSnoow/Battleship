@@ -4,9 +4,14 @@ import scala.collection.immutable.NumericRange
 
 
 object Convert_Util {
-    
-    val gridCollumns: NumericRange[Char] = ('A' to 'J')
 
+    // the numeric range used to determine the column from an int
+    val gridcolumns: NumericRange[Char] = ('A' to 'J')
+
+    /** strToInt
+    * @param str the String to attempt to convert to Int
+    * @return an Option[Int], Int if it has been converted, or else None
+    */
     def strToInt(str: String): Option[Int] = {
         try {
             Some(str.toInt)
@@ -15,5 +20,9 @@ object Convert_Util {
         }
     }
 
-    def indexOfCol (element: String): Int = gridCollumns.indexOf(element.head)
+    /** indexOfCol
+    * @param element a String that is in the numeric range
+    * @return an Int, the index of given string in the numeric range
+    */
+    def indexOfCol (element: String): Int = gridcolumns.indexOf(element.head)
 }
